@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ヒントページ</title>
+
+  <style>
+    html, body { height: 100%; margin: 0; }
+    .frame { width: 100%; height: 100dvh; border: 0; display: block; }
+    @supports not (height: 100dvh) { .frame { height: 100vh; } }
+  </style>
+</head>
+
+<body>
+  <iframe id="hintFrame" class="frame" loading="eager"></iframe>
+
+  <script>
+    // ここだけ差し替え
+    const GAS_WEBAPP = "https://script.google.com/macros/s/【ここにWebアプリURL】/exec";
+
+    // iframe 表示
+    document.getElementById("hintFrame").src = GAS_WEBAPP;
+
+    // タブ名（title）を config.siteTitle に追従
+    (function loadTitle(){
+      const s = document.createElement("script");
+      s.src = GAS_WEBAPP + "?type=datajs";
+      s.onload = () => {
+        const d = window.__HINT_DATA__;
+        const t = d && d.config && d.config.siteTitle;
+        if (t) document.title = t;
+      };
+      // 失敗した場合固定タイトルのまま
+      document.head.appendChild(s);
+    })();
+  </script>
+</body>
+</html>
