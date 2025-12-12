@@ -1,39 +1,553 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.3, user-scalable=no" />
   <title>ヒントページ</title>
 
   <style>
-    html, body { height: 100%; margin: 0; }
-    .frame { width: 100%; height: 100dvh; border: 0; display: block; }
-    @supports not (height: 100dvh) { .frame { height: 100vh; } }
+    :root{
+      --ynu-main:#004E9A;
+      --ynu-dark:#00396F;
+      --ynu-light:#EAF2FB;
+
+      --panel-bg:#fff;
+      --hint-bg:#F2F7FD;
+    }
+
+    *{ box-sizing:border-box; }
+
+    html{
+      font-size:16px;
+      -webkit-text-size-adjust:100%;
+    }
+
+    body{
+      margin:0;
+      background:var(--ynu-light);
+      font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Segoe UI",sans-serif;
+      font-size:0.95rem;
+    }
+
+    .outer-gate{ display:none; } /* データが来るまで非表示（「仮タイトル」等を見せない） */
+
+    .outer-frame{
+      width:min(94vw,720px);
+      margin:20px auto;
+      background:var(--panel-bg);
+      border:1px solid var(--ynu-dark);
+    }
+
+    /* ===== パンくず ===== */
+    .breadcrumb{
+      padding:10px 12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+      border-bottom:1px solid var(--ynu-dark);
+      font-size:0.8rem;
+    }
+
+    .crumb{
+      border:1px solid var(--ynu-dark);
+      border-radius:999px;
+      padding:4px 12px;
+      cursor:pointer;
+      background:#fff;
+      color:var(--ynu-dark);
+      white-space:nowrap;
+      display:flex;
+      align-items:center;
+      line-height:1;
+      font-size:0.8rem;
+
+      transition:background-color .15s ease,color .15s ease,border-color .15s ease,transform .08s ease;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
+      user-select:none;
+    }
+
+    /* ===== 見出し行 ===== */
+    .header-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:6px 14px;
+      border-bottom:1px solid var(--ynu-dark);
+    }
+
+    .header-title{
+      font-size:1.3rem;
+      font-weight:700;
+      color:var(--ynu-dark);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      margin:0;
+    }
+
+    .header-back{
+      width:32px;
+      height:32px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      font-size:1.1rem;
+      cursor:pointer;
+      user-select:none;
+
+      background:#fff;
+      color:var(--ynu-dark);
+      border:1px solid var(--ynu-dark);
+      border-radius:4px;
+      margin-left:8px;
+
+      transition:background-color .15s ease,color .15s ease,border-color .15s ease,transform .08s ease;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
+    }
+
+    /* ===== 本文 ===== */
+    .container{ padding:16px; }
+
+    .hint-box{
+      background:var(--hint-bg);
+      border-radius:8px;
+      padding:14px;
+      font-size:0.95rem;
+      line-height:1.8;
+      margin-bottom:14px;
+    }
+
+    /* ===== ボタン ===== */
+    .button{
+      width:100%;
+      min-height:44px;
+      padding:12px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      line-height:1.15;
+
+      border-radius:8px;
+      background:var(--ynu-main);
+      color:#fff;
+      font-size:0.95rem;
+      font-weight:700;
+      text-align:center;
+      margin:8px 0;
+      cursor:pointer;
+      user-select:none;
+
+      transition:background-color .15s ease,color .15s ease,border-color .15s ease,transform .08s ease;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
+    }
+
+    /* returnPathボタン（白ベース） */
+    .button-return{
+      background:#fff;
+      color:var(--ynu-main);
+      border:1px solid var(--ynu-main);
+    }
+
+    /* 押下アニメ */
+    .is-pressed{
+      transform:translateY(1px) scale(0.99);
+    }
+    .button.is-pressed{ background:var(--ynu-dark); }
+    .button-return.is-pressed{
+      background:var(--ynu-main);
+      color:#fff;
+      border-color:var(--ynu-main);
+    }
+    .crumb.is-pressed,
+    .header-back.is-pressed{
+      background:var(--ynu-main);
+      color:#fff;
+      border-color:var(--ynu-main);
+    }
+
+    /* hover は “hoverが本当にある” 端末だけ */
+    @media (hover:hover) and (pointer:fine){
+      .crumb:hover,
+      .crumb.is-hover{
+        background:var(--ynu-main);
+        color:#fff;
+        border-color:var(--ynu-main);
+      }
+
+      .header-back:hover{
+        background:var(--ynu-main);
+        color:#fff;
+        border-color:var(--ynu-main);
+      }
+
+      .button:hover{ background:var(--ynu-dark); }
+
+      .button-return:hover,
+      .button-return.is-hover{
+        background:var(--ynu-main);
+        color:#fff;
+        border-color:var(--ynu-main);
+      }
+    }
+
+    /* 生成直後だけ transition を切ってチカを消す */
+    .no-trans{ transition:none !important; }
+
+    @media (max-width:480px){
+      html{ font-size:18px; }
+      body{ font-size:1rem; }
+
+      .outer-frame{
+        width:calc(100vw - 24px);
+        margin:8px auto 16px;
+        border-left:1px solid var(--ynu-dark);
+        border-right:1px solid var(--ynu-dark);
+      }
+
+      .breadcrumb{
+        font-size:0.75rem;
+        padding:6px 8px;
+      }
+      .crumb{
+        font-size:0.75rem;
+        padding:3px 9px;
+      }
+      .header-title{ font-size:1.2rem; }
+
+      .hint-box{
+        font-size:0.95rem;
+        line-height:1.7;
+        padding:12px;
+        margin-bottom:12px;
+      }
+
+      .button{
+        font-size:0.9rem;
+        min-height:44px;
+        padding:12px 12px;
+        margin:6px 0;
+      }
+    }
+
+    /* エラー時だけ見せる */
+    .fatal{
+      width:min(94vw,720px);
+      margin:20px auto;
+      padding:12px 14px;
+      border:1px solid #c00;
+      background:#fff;
+      color:#c00;
+      font-size:0.95rem;
+      line-height:1.6;
+      display:none;
+    }
   </style>
 </head>
 
 <body>
-  <iframe id="hintFrame" class="frame" loading="eager"></iframe>
+  <div class="fatal" id="fatal"></div>
+
+  <div class="outer-gate" id="gate">
+    <div class="outer-frame">
+      <div class="breadcrumb" id="breadcrumb"></div>
+
+      <div class="header-row">
+        <div class="header-title" id="headerTitle">ヒントページ</div>
+        <div class="header-back" id="backBtn">←</div>
+      </div>
+
+      <div class="container" id="app"></div>
+    </div>
+  </div>
 
   <script>
-    // ここだけ差し替え
-    const GAS_WEBAPP = "https://script.google.com/macros/s/AKfycbyfG6fL5o_l2QWG9YtbOg4XDLKMmCzr_Zgb64gtoOindl5AVj4GjLDk6OsIcCNnCFD_lg/exec";
+    /* =========================
+     * ここだけ差し替え
+     * ========================= */
+    const GAS_WEBAPP_EXEC = "https://script.google.com/macros/s/AKfycbyfG6fL5o_l2QWG9YtbOg4XDLKMmCzr_Zgb64gtoOindl5AVj4GjLDk6OsIcCNnCFD_lg/exec";
+    // 例：あなたの WebアプリURL の末尾が /exec のやつ
 
-    // iframe 表示
-    document.getElementById("hintFrame").src = GAS_WEBAPP;
+    /* =========================
+     * アプリ本体（あなたの現行JS）
+     * ========================= */
+    let rootNode = {};
+    let currentPath = [];
+    let SITE_TITLE = "ヒントページ";
 
-    // タブ名（title）を config.siteTitle に追従
-    (function loadTitle(){
-      const s = document.createElement("script");
-      s.src = GAS_WEBAPP + "?type=datajs";
+    // 直前ポインタ位置（生成直後の「ホバー見た目」用）
+    const lastPointer = { x:-1, y:-1, pointerType:'mouse' };
+
+    window.addEventListener('pointerdown', (e) => {
+      if (typeof e.clientX === 'number') {
+        lastPointer.x = e.clientX;
+        lastPointer.y = e.clientY;
+        lastPointer.pointerType = e.pointerType || 'mouse';
+      }
+    }, { passive:true });
+
+    window.addEventListener('mousemove', (e) => {
+      lastPointer.x = e.clientX;
+      lastPointer.y = e.clientY;
+      lastPointer.pointerType = 'mouse';
+    }, { passive:true });
+
+    function attachPressEffect(el){
+      const down = () => el.classList.add('is-pressed');
+      const up   = () => el.classList.remove('is-pressed');
+
+      el.addEventListener('pointerdown', down);
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+      el.addEventListener('pointerleave', up);
+
+      // iOS古め対策（保険）
+      el.addEventListener('touchstart', down, { passive:true });
+      el.addEventListener('touchend', up, { passive:true });
+      el.addEventListener('touchcancel', up, { passive:true });
+    }
+
+    function canHoverDevice(){
+      return window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+    }
+
+    function applyImmediateHoverIfUnderPointer(el){
+      if (!canHoverDevice()) return;
+      if (lastPointer.pointerType !== 'mouse') return;
+
+      const r = el.getBoundingClientRect();
+      const x = lastPointer.x, y = lastPointer.y;
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom){
+        el.classList.add('is-hover');
+        el.addEventListener('mouseleave', () => el.classList.remove('is-hover'));
+        el.addEventListener('mouseenter', () => el.classList.add('is-hover'));
+      }
+    }
+
+    function goBack(){
+      if (currentPath.length > 0){
+        currentPath.pop();
+        renderNodeByPath(currentPath);
+      }
+    }
+
+    const backBtnEl = document.getElementById('backBtn');
+    backBtnEl.onclick = goBack;
+    attachPressEffect(backBtnEl);
+
+    function applyConfig(cfg){
+      cfg = cfg || {};
+      const root = document.documentElement;
+
+      if (cfg.themeMain)  root.style.setProperty('--ynu-main', cfg.themeMain);
+      if (cfg.themeDark)  root.style.setProperty('--ynu-dark', cfg.themeDark);
+      if (cfg.themeLight) root.style.setProperty('--ynu-light', cfg.themeLight);
+      if (cfg.panelBg)    root.style.setProperty('--panel-bg', cfg.panelBg);
+      if (cfg.hintBg)     root.style.setProperty('--hint-bg', cfg.hintBg);
+
+      if (cfg.siteTitle){
+        SITE_TITLE = cfg.siteTitle;
+        document.title = cfg.siteTitle;
+        const ht = document.getElementById('headerTitle');
+        if (ht && currentPath.length === 0) ht.textContent = SITE_TITLE;
+      }
+    }
+
+    function buildTree(rows){
+      const root = {};
+      (rows || []).forEach(row => {
+        const parts = String(row.path).split('/');
+        const last = parts[parts.length - 1];
+
+        let node = root;
+        parts.forEach(p => {
+          if (!node[p]) node[p] = { _children:{}, _content:'', _returnPath:'' };
+          node = node[p]._children;
+        });
+
+        let target = root;
+        parts.forEach(p => {
+          if (!target[p]) target[p] = { _children:{}, _content:'', _returnPath:'' };
+          if (p === last){
+            target[p]._content = row.content ? String(row.content) : '';
+            target[p]._returnPath = row.returnPath ? String(row.returnPath) : '';
+          }
+          target = target[p]._children;
+        });
+      });
+      return root;
+    }
+
+    function getContentNode(path){
+      let node = rootNode;
+      let content = '';
+      for (const p of path){
+        if (!node[p]) return '';
+        content = node[p]._content || '';
+        node = node[p]._children;
+      }
+      return content;
+    }
+
+    function getReturnPath(path){
+      let node = rootNode;
+      let returnPath = '';
+      for (const p of path){
+        if (!node[p]) return '';
+        returnPath = node[p]._returnPath || '';
+        node = node[p]._children;
+      }
+      return returnPath;
+    }
+
+    function renderBreadcrumb(){
+      const bc = document.getElementById('breadcrumb');
+      bc.innerHTML = '';
+
+      // TOP
+      const top = document.createElement('div');
+      top.className = 'crumb no-trans';
+      top.textContent = SITE_TITLE;
+      top.onclick = () => { currentPath = []; renderNodeByPath([]); };
+      attachPressEffect(top);
+      bc.appendChild(top);
+      applyImmediateHoverIfUnderPointer(top);
+      requestAnimationFrame(() => top.classList.remove('no-trans'));
+
+      currentPath.forEach((p, i) => {
+        const sep = document.createElement('span');
+        sep.className = 'crumb-sep';
+        sep.textContent = '>';
+        bc.appendChild(sep);
+
+        const c = document.createElement('div');
+        c.className = 'crumb no-trans';
+        c.textContent = p;
+        c.onclick = () => {
+          currentPath = currentPath.slice(0, i + 1);
+          renderNodeByPath(currentPath);
+        };
+        attachPressEffect(c);
+        bc.appendChild(c);
+        applyImmediateHoverIfUnderPointer(c);
+        requestAnimationFrame(() => c.classList.remove('no-trans'));
+      });
+    }
+
+    function renderNodeByPath(path){
+      const app = document.getElementById('app');
+      const title = document.getElementById('headerTitle');
+
+      // 変な戻り先対策
+      let node = rootNode;
+      for (const p of path){
+        if (!node[p]){
+          currentPath = [];
+          return renderNodeByPath([]);
+        }
+        node = node[p]._children;
+      }
+
+      title.textContent = path.length ? path[path.length - 1] : SITE_TITLE;
+      renderBreadcrumb();
+      backBtnEl.style.display = (path.length === 0) ? 'none' : 'flex';
+
+      app.innerHTML = '';
+
+      if (path.length === 0){
+        const intro = document.createElement('div');
+        intro.className = 'hint-box';
+        intro.textContent = 'ヒントを見たいパートをタップしてください。';
+        app.appendChild(intro);
+      }
+
+      const contentNode = getContentNode(path);
+      if (contentNode){
+        const box = document.createElement('div');
+        box.className = 'hint-box';
+        box.innerHTML = String(contentNode).replace(/\n/g, '<br>');
+        app.appendChild(box);
+      }
+
+      // 子階層ボタン
+      const keys = Object.keys(node || {});
+      keys.forEach(k => {
+        const btn = document.createElement('div');
+        btn.className = 'button';
+        btn.textContent = k;
+        btn.onclick = () => {
+          currentPath.push(k);
+          renderNodeByPath(currentPath);
+        };
+        attachPressEffect(btn);
+        app.appendChild(btn);
+        applyImmediateHoverIfUnderPointer(btn);
+      });
+
+      // returnPathボタン
+      const returnPath = getReturnPath(path);
+      if (returnPath){
+        const backTo = document.createElement('div');
+        backTo.className = 'button button-return no-trans';
+        backTo.textContent = `${returnPath} に戻る`;
+        backTo.onclick = () => {
+          currentPath = returnPath.split('/').filter(Boolean);
+          renderNodeByPath(currentPath);
+        };
+        attachPressEffect(backTo);
+        app.appendChild(backTo);
+
+        applyImmediateHoverIfUnderPointer(backTo);
+        requestAnimationFrame(() => backTo.classList.remove('no-trans'));
+      }
+    }
+
+    function startWithData(data){
+      data = data || {};
+      applyConfig(data.config || {});
+      rootNode = buildTree(data.rows || []);
+      renderNodeByPath([]);
+    }
+
+    /* =========================
+     * 起動：GASの datajs を読み込む
+     * ========================= */
+    function fatal(msg){
+      const f = document.getElementById('fatal');
+      f.textContent = msg;
+      f.style.display = 'block';
+    }
+
+    function bootFromDataJs(){
+      // キャッシュで更新が反映されない事故を避ける（datajsはブラウザがキャッシュしがち）
+      const url = GAS_WEBAPP_EXEC + "?type=datajs&ts=" + Date.now();
+
+      const s = document.createElement('script');
+      s.src = url;
+      s.async = true;
+
       s.onload = () => {
-        const d = window.__HINT_DATA__;
-        const t = d && d.config && d.config.siteTitle;
-        if (t) document.title = t;
+        if (!window.__HINT_DATA__){
+          fatal("データの読み込みに失敗しました（datajsは読めたが __HINT_DATA__ がありません）");
+          return;
+        }
+        // ここで初めて画面を出す（仮表示ゼロ）
+        document.getElementById('gate').style.display = 'block';
+        startWithData(window.__HINT_DATA__);
       };
-      // 失敗した場合固定タイトルのまま
+
+      s.onerror = () => {
+        fatal("データの読み込みに失敗しました（GAS URL / 公開設定 / ネットワークを確認）");
+      };
+
       document.head.appendChild(s);
-    })();
+    }
+
+    bootFromDataJs();
   </script>
 </body>
 </html>
