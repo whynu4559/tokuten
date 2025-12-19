@@ -13,7 +13,6 @@
       --bg: var(--ynu-light);
       --card:#ffffff;
       --text:#0f172a;
-      --muted:#64748b;
 
       --ok-bg: rgba(0, 78, 154, 0.10);
       --ok-text: var(--ynu-dark);
@@ -41,15 +40,24 @@
     .app{
       max-width: 980px;
       margin: 0 auto;
-      padding: 16px 14px 40px;
+      padding:
+        16px
+        calc(14px + env(safe-area-inset-right))
+        40px
+        calc(14px + env(safe-area-inset-left));
     }
 
+    /* ▼タイトル左キワキワ対策：左右パディング増 + SafeArea対応 */
     .topbar{
       position: sticky;
       top: 0;
       z-index: 10;
-      margin: 0 -14px 14px;
-      padding: 12px 14px;
+      margin: 0;
+      padding:
+        12px
+        calc(18px + env(safe-area-inset-right))
+        12px
+        calc(18px + env(safe-area-inset-left));
       backdrop-filter: blur(10px);
       background: rgba(234, 242, 251, 0.75);
       border-bottom: 1px solid rgba(15, 23, 42, 0.08);
@@ -99,13 +107,11 @@
       box-shadow: 0 0 0 4px rgba(0, 78, 154, 0.12);
     }
 
-    /* ★不正解フラッシュ用（赤リング） */
     .answer-form input[type="text"].errorflash{
       border-color: rgba(164, 38, 44, 0.65) !important;
       box-shadow: 0 0 0 4px rgba(164, 38, 44, 0.16) !important;
     }
 
-    /* ★連続不正解でも分かる：入力欄シェイク */
     .answer-form.shake{
       animation: shake 260ms ease-in-out;
     }
@@ -118,7 +124,6 @@
       100%{ transform: translateX(0); }
     }
 
-    /* ボタン（ヒントサイト系） */
     .answer-form button{
       padding: 12px 16px;
       border: 1px solid rgba(0, 78, 154, 0.25);
@@ -166,7 +171,6 @@
       gap: 14px;
     }
 
-    /* ステージごとの周り色は --accent / --accentText で制御 */
     .stage{
       border: 3px solid var(--accent);
       border-radius: 14px;
@@ -218,9 +222,7 @@
       position: relative;
     }
 
-    /* 正解済み（ステージの周り色に寄せる） */
     .answer.answered{
-      background: #ffffff;
       background: color-mix(in srgb, var(--accent) 16%, #ffffff);
       border-color: color-mix(in srgb, var(--accent) 45%, rgba(15,23,42,0.10));
       color: color-mix(in srgb, var(--accent) 55%, #0f172a);
@@ -231,7 +233,6 @@
       100%{ transform: scale(1); }
     }
 
-    /* 連続正解でも分かる：毎回フラッシュ */
     .answer.flash{
       animation: flash 420ms ease-out;
     }
@@ -250,29 +251,30 @@
     @media (max-width: 720px){
       .panel-body{ padding: 14px; }
       .answer-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .answer-form button{ padding: 12px 14px; }
+      .answer-form{ flex-direction: column; }
+      .answer-form button{ width: 100%; padding: 14px 16px; font-size: 16px; }
     }
     @media (max-width: 420px){
       .answer-grid{ grid-template-columns: 1fr; }
-      .answer-form{ flex-direction: column; }
-      .answer-form button{ width: 100%; }
     }
 
+    /* ▼ヒントボタン：右下→右上寄り、テキスト短縮 */
     .hint-button{
       position: fixed;
-      right: 24px;
-      bottom: 24px;
-      padding: 14px 24px;
+      top: calc(64px + env(safe-area-inset-top)); /* topbar下あたり */
+      right: calc(16px + env(safe-area-inset-right));
+      bottom: auto;
+      padding: 12px 18px;
       border-radius: 999px;
       background: #ffb900;
       color: #1f1f1f;
-      font-weight: 700;
-      font-size: 15px;
+      font-weight: 800;
+      font-size: 14px;
       text-decoration: none;
       box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
       transition: transform 140ms ease, box-shadow 140ms ease;
+      z-index: 30;
     }
-
     .hint-button:hover{
       transform: translateY(-2px);
       box-shadow: 0 16px 30px rgba(15, 23, 42, 0.22);
@@ -321,7 +323,6 @@
       margin: 0 0 10px;
     }
 
-    /* ★追加：モーダルのOKボタン列 */
     .modal-actions{
       display: flex;
       justify-content: flex-end;
@@ -346,9 +347,15 @@
       margin-top: 20px;
       text-align: center;
     }
+    .post-wrapper.is-visible{ display: block; }
 
-    .post-wrapper.is-visible{
-      display: block;
+    /* ▼押しづらい対策：行としてまとめて余白/サイズ確保 */
+    .post-actions{
+      display:flex;
+      justify-content:center;
+      align-items: stretch;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
     .post-x-button{
@@ -356,42 +363,40 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 12px 24px;
+      padding: 14px 22px;   /* 少し大きく */
       border-radius: 999px;
       background: linear-gradient(135deg, #111827, #1f2937);
       color: #ffffff;
       font-size: 15px;
-      font-weight: 700;
+      font-weight: 800;
       text-decoration: none;
       box-shadow: 0 12px 30px rgba(15, 23, 42, 0.28);
       transition: transform 140ms ease, box-shadow 140ms ease;
       border: none;
       cursor: pointer;
+      min-width: 180px;
     }
-
     .post-x-button:hover{
       transform: translateY(-2px);
       box-shadow: 0 16px 36px rgba(15, 23, 42, 0.3);
     }
 
-    /* 進捗リセット（右そば） */
     .reset-button{
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 12px 18px;
+      padding: 14px 20px; /* 少し大きく */
       border-radius: 999px;
       background: #ffffff;
       color: #111827;
       font-size: 14px;
-      font-weight: 800;
-      text-decoration: none;
+      font-weight: 900;
       border: 1px solid rgba(15, 23, 42, 0.18);
       box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
       transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
       cursor: pointer;
-      margin-left: 10px;
+      min-width: 180px;
     }
     .reset-button:hover{
       transform: translateY(-2px);
@@ -399,9 +404,12 @@
       background: rgba(15, 23, 42, 0.02);
     }
 
-    .modal-card .post-x-button{
-      margin-top: 18px;
+    @media (max-width: 520px){
+      .post-actions{ flex-direction: column; }
+      .post-x-button, .reset-button{ width: 100%; min-width: 0; }
     }
+
+    .modal-card .post-x-button{ margin-top: 18px; }
   </style>
 </head>
 
@@ -430,19 +438,21 @@
         <div id="stages" class="stages"></div>
 
         <div id="post-wrapper" class="post-wrapper">
-          <a
-            id="post-x-button"
-            class="post-x-button"
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-          >Xでポストする</a>
+          <div class="post-actions">
+            <a
+              id="post-x-button"
+              class="post-x-button"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+            >Xでポストする</a>
 
-          <button
-            id="reset-progress"
-            type="button"
-            class="reset-button"
-          >進捗をリセット</button>
+            <button
+              id="reset-progress"
+              type="button"
+              class="reset-button"
+            >進捗をリセット</button>
+          </div>
         </div>
       </div>
     </section>
@@ -456,7 +466,6 @@
       <p>・謎17~20は4分割し、謎19は上の線を山折り、下の線を谷折りしてください。</p>
       <p>・ゲームの性質上、謎18,19は本来の流れで解くことができません。ボーナス③を利用した状態だとお考えください。<br>ボーナス一覧は<b>ヒントページ</b>からご覧いただけます。</p>
 
-      <!-- ★追加：OKボタン -->
       <div class="modal-actions">
         <button id="welcome-ok" type="button" class="modal-ok">OK</button>
       </div>
@@ -468,7 +477,7 @@
       <h3>すべての謎に正解しました！</h3>
       <p>下のボタンから感想をポストすることができます。</p>
       <p>もう一度遊びたい場合は<b>進捗をリセット</b>を押してください。</p>
-      <p>5. このウィンドウはボタン以外をタップすると閉じます。</p>
+      <p>このウィンドウはボタン以外をタップすると閉じます。</p>
       <a
         id="modal-post-button"
         class="post-x-button"
@@ -479,7 +488,8 @@
     </div>
   </div>
 
-  <a class="hint-button" href="https://whynu4559.github.io/tokuten/hint/" target="_blank" rel="noopener noreferrer">ヒントはこちら</a>
+  <!-- ▼ラベル短縮：ヒントはこちら → ヒント -->
+  <a class="hint-button" href="https://whynu4559.github.io/tokuten/hint/" target="_blank" rel="noopener noreferrer">ヒント</a>
 
   <script>
     const STORAGE_KEY = "scoreJudgeOpened:v3";
@@ -667,9 +677,7 @@
     }
 
     function resetProgress() {
-      try {
-        localStorage.removeItem(STORAGE_KEY);
-      } catch {}
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
       try {
         const openedSet = loadOpened();
         openedSetCache = openedSet;
@@ -875,7 +883,6 @@
       updatePostButton();
     }
 
-    // ★追加：welcomeモーダルをOKボタンで閉じる
     function hideWelcomeModal() {
       if (!welcomeModal) return;
       welcomeModal.classList.add("is-hidden");
@@ -890,11 +897,8 @@
       document.getElementById("answer-form")
         .addEventListener("submit", (e) => handleSubmit(e, openedSet));
 
-      if (resetButton) {
-        resetButton.addEventListener("click", resetProgress);
-      }
+      if (resetButton) resetButton.addEventListener("click", resetProgress);
 
-      // ★OKボタン
       if (welcomeOkButton) {
         welcomeOkButton.addEventListener("click", (e) => {
           e.stopPropagation();
