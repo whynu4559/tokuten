@@ -681,14 +681,26 @@
     }
 
     function resetProgress() {
+      // localStorage を消す
       try { localStorage.removeItem(STORAGE_KEY); } catch {}
+
+      // ★重要：submit側が参照している Set を「同じ参照のまま」空にする
+      if (openedSetCache && openedSetCache instanceof Set) {
+        openedSetCache.clear();
+      } else {
+        openedSetCache = new Set();
+      }
+
+      // 空の状態を保存してUIを再描画
+      saveOpened(openedSetCache);
+
       try {
-        const openedSet = loadOpened();
-        openedSetCache = openedSet;
         const stages = parseAnswers(answerSource);
-        renderStages(stages, openedSet);
+        renderStages(stages, openedSetCache);
+    
         hasShownCongratsModal = false;
         if (congratsModal) congratsModal.classList.add("is-hidden");
+    
         showMessage("正解状態をリセットしました。", "ok");
       } catch (e) {
         console.error(e);
@@ -697,6 +709,7 @@
         window.location.search = params.toString();
       }
     }
+
 
     function setupModalDismiss(modal, { ignoreSelectors = [] } = {}) {
       if (!modal) return;
